@@ -4,19 +4,19 @@ Date: Mon, 15 Aug 2016 17:06:18 -0500
 Subject: [PATCH] Apply modified gridmode patch.
 
 ---
- config.def.h |  3 +++
+ config.h |  3 +++
  layouts.c    | 27 +++++++++++++++++++++++++++
  2 files changed, 30 insertions(+)
  create mode 100644 layouts.c
 
-diff --git a/config.def.h b/config.def.h
+diff --git a/config.h b/config.h
 index a9ac303..30b7c4a 100644
---- a/config.def.h
-+++ b/config.def.h
+--- a/config.h
++++ b/config.h
 @@ -36,11 +36,13 @@ static const float mfact     = 0.55; /* factor of master area size [0.05..0.95]
  static const int nmaster     = 1;    /* number of clients in master area */
  static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
- 
+
 +#include "layouts.c"
  static const Layout layouts[] = {
  	/* symbol     arrange function */
@@ -25,7 +25,7 @@ index a9ac303..30b7c4a 100644
  	{ "[M]",      monocle },
 +	{ "HHH",      grid },
  };
- 
+
  /* key definitions */
 @@ -76,6 +78,7 @@ static Key keys[] = {
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
@@ -68,6 +68,6 @@ index 0000000..d26acf3
 +		i++;
 +	}
 +}
--- 
+--
 2.14.1
 
