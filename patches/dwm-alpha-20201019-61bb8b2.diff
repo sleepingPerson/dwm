@@ -5,17 +5,17 @@ Subject: [PATCH] Allow dwm to have translucent bars, while keeping all
  the  text on it opaque, just like the alpha-patch for st. Updated for 61bb8b2
 
 ---
- config.def.h |  7 ++++++
+ config.h |  7 ++++++
  config.mk    |  2 +-
  drw.c        | 26 ++++++++++++-----------
  drw.h        |  9 +++++---
  dwm.c        | 60 ++++++++++++++++++++++++++++++++++++++++++++++------
  5 files changed, 82 insertions(+), 22 deletions(-)
 
-diff --git a/config.def.h b/config.def.h
+diff --git a/config.h b/config.h
 index 1c0b587..4f68fe8 100644
---- a/config.def.h
-+++ b/config.def.h
+--- a/config.h
++++ b/config.h
 @@ -12,11 +12,18 @@ static const char col_gray2[]       = "#444444";
  static const char col_gray3[]       = "#bbbbbb";
  static const char col_gray4[]       = "#eeeeee";
@@ -32,7 +32,7 @@ index 1c0b587..4f68fe8 100644
 +	[SchemeNorm] = { OPAQUE, baralpha, borderalpha },
 +	[SchemeSel]  = { OPAQUE, baralpha, borderalpha },
 +};
- 
+
  /* tagging */
  static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 diff --git a/config.mk b/config.mk
@@ -40,12 +40,12 @@ index 7084c33..21b5404 100644
 --- a/config.mk
 +++ b/config.mk
 @@ -22,7 +22,7 @@ FREETYPEINC = /usr/include/freetype2
- 
+
  # includes and libs
  INCS = -I${X11INC} -I${FREETYPEINC}
 -LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS}
 +LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS} -lXrender
- 
+
  # flags
  CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
 diff --git a/drw.c b/drw.c
@@ -54,13 +54,13 @@ index 4cdbcbe..fe3aadd 100644
 +++ b/drw.c
 @@ -61,7 +61,7 @@ utf8decode(const char *c, long *u, size_t clen)
  }
- 
+
  Drw *
 -drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h)
 +drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h, Visual *visual, unsigned int depth, Colormap cmap)
  {
  	Drw *drw = ecalloc(1, sizeof(Drw));
- 
+
 @@ -70,8 +70,11 @@ drw_create(Display *dpy, int screen, Window root, unsigned int w, unsigned int h
  	drw->root = root;
  	drw->w = w;
@@ -73,7 +73,7 @@ index 4cdbcbe..fe3aadd 100644
 +	drw->drawable = XCreatePixmap(dpy, root, w, h, depth);
 +	drw->gc = XCreateGC(dpy, drw->drawable, 0, NULL);
  	XSetLineAttributes(dpy, drw->gc, 1, LineSolid, CapButt, JoinMiter);
- 
+
  	return drw;
 @@ -87,7 +90,7 @@ drw_resize(Drw *drw, unsigned int w, unsigned int h)
  	drw->h = h;
@@ -82,18 +82,18 @@ index 4cdbcbe..fe3aadd 100644
 -	drw->drawable = XCreatePixmap(drw->dpy, drw->root, w, h, DefaultDepth(drw->dpy, drw->screen));
 +	drw->drawable = XCreatePixmap(drw->dpy, drw->root, w, h, drw->depth);
  }
- 
+
  void
 @@ -194,21 +197,22 @@ drw_fontset_free(Fnt *font)
  }
- 
+
  void
 -drw_clr_create(Drw *drw, Clr *dest, const char *clrname)
 +drw_clr_create(Drw *drw, Clr *dest, const char *clrname, unsigned int alpha)
  {
  	if (!drw || !dest || !clrname)
  		return;
- 
+
 -	if (!XftColorAllocName(drw->dpy, DefaultVisual(drw->dpy, drw->screen),
 -	                       DefaultColormap(drw->dpy, drw->screen),
 +	if (!XftColorAllocName(drw->dpy, drw->visual, drw->cmap,
@@ -102,7 +102,7 @@ index 4cdbcbe..fe3aadd 100644
 +
 +	dest->pixel = (dest->pixel & 0x00ffffffU) | (alpha << 24);
  }
- 
+
  /* Wrapper to create color schemes. The caller has to call free(3) on the
   * returned color scheme when done using it. */
  Clr *
@@ -113,13 +113,13 @@ index 4cdbcbe..fe3aadd 100644
  	Clr *ret;
 @@ -218,7 +222,7 @@ drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount)
  		return NULL;
- 
+
  	for (i = 0; i < clrcount; i++)
 -		drw_clr_create(drw, &ret[i], clrnames[i]);
 +		drw_clr_create(drw, &ret[i], clrnames[i], alphas[i]);
  	return ret;
  }
- 
+
 @@ -274,9 +278,7 @@ drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lp
  	} else {
  		XSetForeground(drw->dpy, drw->gc, drw->scheme[invert ? ColFg : ColBg].pixel);
@@ -147,22 +147,22 @@ index 4bcd5ad..a56f523 100644
  	Clr *scheme;
 @@ -27,7 +30,7 @@ typedef struct {
  } Drw;
- 
+
  /* Drawable abstraction */
 -Drw *drw_create(Display *dpy, int screen, Window win, unsigned int w, unsigned int h);
 +Drw *drw_create(Display *dpy, int screen, Window win, unsigned int w, unsigned int h, Visual *visual, unsigned int depth, Colormap cmap);
  void drw_resize(Drw *drw, unsigned int w, unsigned int h);
  void drw_free(Drw *drw);
- 
+
 @@ -38,8 +41,8 @@ unsigned int drw_fontset_getwidth(Drw *drw, const char *text);
  void drw_font_getexts(Fnt *font, const char *text, unsigned int len, unsigned int *w, unsigned int *h);
- 
+
  /* Colorscheme abstraction */
 -void drw_clr_create(Drw *drw, Clr *dest, const char *clrname);
 -Clr *drw_scm_create(Drw *drw, const char *clrnames[], size_t clrcount);
 +void drw_clr_create(Drw *drw, Clr *dest, const char *clrname, unsigned int alpha);
 +Clr *drw_scm_create(Drw *drw, const char *clrnames[], const unsigned int alphas[], size_t clrcount);
- 
+
  /* Cursor abstraction */
  Cur *drw_cur_create(Drw *drw, int shape);
 diff --git a/dwm.c b/dwm.c
@@ -172,7 +172,7 @@ index 664c527..d8005c7 100644
 @@ -57,6 +57,8 @@
  #define TAGMASK                 ((1 << LENGTH(tags)) - 1)
  #define TEXTW(X)                (drw_fontset_getwidth(drw, (X)) + lrpad)
- 
+
 +#define OPAQUE                  0xffU
 +
  /* enums */
@@ -184,12 +184,12 @@ index 664c527..d8005c7 100644
  static int xerrorstart(Display *dpy, XErrorEvent *ee);
 +static void xinitvisual();
  static void zoom(const Arg *arg);
- 
+
  /* variables */
 @@ -269,6 +272,11 @@ static Drw *drw;
  static Monitor *mons, *selmon;
  static Window root, wmcheckwin;
- 
+
 +static int useargb = 0;
 +static Visual *visual;
 +static int depth;
@@ -197,7 +197,7 @@ index 664c527..d8005c7 100644
 +
  /* configuration, allows nested code to access above variables */
  #include "config.h"
- 
+
 @@ -1542,7 +1550,8 @@ setup(void)
  	sw = DisplayWidth(dpy, screen);
  	sh = DisplayHeight(dpy, screen);
@@ -243,7 +243,7 @@ index 664c527..d8005c7 100644
 @@ -2113,6 +2124,43 @@ xerrorstart(Display *dpy, XErrorEvent *ee)
  	return -1;
  }
- 
+
 +void
 +xinitvisual()
 +{
@@ -284,6 +284,6 @@ index 664c527..d8005c7 100644
  void
  zoom(const Arg *arg)
  {
--- 
+--
 2.28.0
 
