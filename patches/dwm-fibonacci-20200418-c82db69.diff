@@ -4,19 +4,19 @@ Date: Sat, 18 Apr 2020 09:55:26 -0700
 Subject: [PATCH] Adding the fibonacci layout patch
 
 ---
- config.def.h |  5 ++++
+ config.h |  5 ++++
  fibonacci.c  | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 71 insertions(+)
  create mode 100644 fibonacci.c
 
-diff --git a/config.def.h b/config.def.h
+diff --git a/config.h b/config.h
 index 1c0b587..5708487 100644
---- a/config.def.h
-+++ b/config.def.h
+--- a/config.h
++++ b/config.h
 @@ -36,11 +36,14 @@ static const float mfact     = 0.55; /* factor of master area size [0.05..0.95]
  static const int nmaster     = 1;    /* number of clients in master area */
  static const int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
- 
+
 +#include "fibonacci.c"
  static const Layout layouts[] = {
  	/* symbol     arrange function */
@@ -26,7 +26,7 @@ index 1c0b587..5708487 100644
 + 	{ "[@]",      spiral },
 + 	{ "[\\]",      dwindle },
  };
- 
+
  /* key definitions */
 @@ -76,6 +79,8 @@ static Key keys[] = {
  	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
@@ -51,12 +51,12 @@ index 0000000..fce0a57
 +	for(n = 0, c = nexttiled(mon->clients); c; c = nexttiled(c->next), n++);
 +	if(n == 0)
 +		return;
-+	
++
 +	nx = mon->wx;
 +	ny = 0;
 +	nw = mon->ww;
 +	nh = mon->wh;
-+	
++
 +	for(i = 0, c = nexttiled(mon->clients); c; c = nexttiled(c->next)) {
 +		if((i % 2 && nh / 2 > 2 * c->bw)
 +		   || (!(i % 2) && nw / 2 > 2 * c->bw)) {
@@ -109,6 +109,6 @@ index 0000000..fce0a57
 +spiral(Monitor *mon) {
 +	fibonacci(mon, 0);
 +}
--- 
+--
 2.20.1
 
