@@ -17,14 +17,14 @@ The above example would set the size of the client to 300x500 pixels, but leave 
 Refer to:
 https://dwm.suckless.org/patches/moveresize/
 ---
- config.def.h |  8 +++++++
+ config.h |  8 +++++++
  dwm.c        | 66 ++++++++++++++++++++++++++++++++++++++++++++++++++++
  2 files changed, 74 insertions(+)
 
-diff --git a/config.def.h b/config.def.h
+diff --git a/config.h b/config.h
 index 1c0b587..ff863c9 100644
---- a/config.def.h
-+++ b/config.def.h
+--- a/config.h
++++ b/config.h
 @@ -78,6 +78,14 @@ static Key keys[] = {
  	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
  	{ MODKEY,                       XK_space,  setlayout,      {0} },
@@ -55,7 +55,7 @@ index 4465af1..89483c1 100644
 @@ -1192,6 +1193,71 @@ movemouse(const Arg *arg)
  	}
  }
- 
+
 +void
 +moveresize(const Arg *arg) {
 +	/* only floating windows can be moved */
@@ -124,6 +124,6 @@ index 4465af1..89483c1 100644
  Client *
  nexttiled(Client *c)
  {
--- 
+--
 2.19.1
 
