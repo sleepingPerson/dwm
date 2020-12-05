@@ -62,7 +62,7 @@ static const Layout layouts[] = {
 	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd) { .v = (const char*[]){ "/usr/bin/sh", "-c", cmd, NULL } }
+#define SHCMD(cmd) { .v = (const char*[]){ "/usr/bin/zsh", "-c", cmd, NULL } }
 
 /* commands */
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
@@ -72,6 +72,12 @@ static const char *termcmd[]  = { "st", NULL };
 static const char *browsercmd[]           = { "firefox-developer-edition", NULL };
 static const char *pingoutcmd[]           = { "st", "-c", "Utility", "-e", "ping", "-c", "16", "-v", "-w", "60", "to-ping", NULL };
 static const char *ncmpcppcmd[]           = { "st", "-c", "Utility", "-e", "ncmpcpp", NULL };
+static const char *procviewercmd[]        = { "st", "-c", "Utility", "-e", "htop", NULL };
+
+static const char *explorercmd[]          = { "pcmanfm", NULL };
+static const char *pwcmd[]                = { "pw.sh", NULL };
+static const char *zathuraopencmd[]       = { "zopen.sh", NULL };
+static const char *setwallcmd[]           = { "setbg.sh", "-e", NULL };
 
 static const char *mute[]                 = { "amixer", "-q", "set", "Master", "toggle", NULL };
 static const char *volumedown[]           = { "amixer", "-q", "set", "Master", "2%-", "unmute", NULL };
@@ -83,19 +89,19 @@ static const char *playprev[]             = { "mpc", "prev", NULL };
 static const char *brightnessup[]         = { "brightnessctl", "set", "2%+", NULL };
 static const char *brightnessdown[]       = { "brightnessctl", "set", "2%-", NULL };
 
-static const char *pwcmd[]                = { "pw.sh", NULL };
-static const char *zopenmd[]              = { "zopen.sh", NULL };
-
 static Key keys[] = {
 	/* modifier                     key        function        argument */
 	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
 	{ MODKEY,                       XK_Return, spawn,          {.v = termcmd } },
 
 	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = browsercmd } },
-	{ MODKEY,                       XK_F5,     spawn,          {.v = zopenmd } },
+	{ MODKEY,                       XK_F5,     spawn,          {.v = zathuraopencmd } },
 	{ MODKEY,                       XK_F10,    spawn,          {.v = ncmpcppcmd } },
+	{ MODKEY,                       XK_F11,    spawn,          {.v = setwallcmd } },
 	{ MODKEY,                       XK_F12,    spawn,          {.v = pingoutcmd } },
 	{ MODKEY,                       XK_Escape, spawn,          {.v = pwcmd } },
+
+	{ MODKEY,                       XK_e,      spawn,          {.v = explorercmd } },
 
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
@@ -134,25 +140,6 @@ static Key keys[] = {
 
 //#define XF86XK_RFKill		0x1008FFB5   /* Toggle radios on/off */
 
-	/* moveresize patch bindings */
-	{ MODKEY,				XK_Down,	moveresize,		{.v = (int []){ 0, 25, 0, 0 }}},
-	{ MODKEY,				XK_Up,		moveresize,		{.v = (int []){ 0, -25, 0, 0 }}},
-	{ MODKEY,				XK_Right,	moveresize,		{.v = (int []){ 25, 0, 0, 0 }}},
-	{ MODKEY,				XK_Left,	moveresize,		{.v = (int []){ -25, 0, 0, 0 }}},
-	{ MODKEY|ShiftMask,		XK_Down,	moveresize,		{.v = (int []){ 0, 0, 0, 25 }}},
-	{ MODKEY|ShiftMask,		XK_Up,		moveresize,		{.v = (int []){ 0, 0, 0, -25 }}},
-	{ MODKEY|ShiftMask,		XK_Right,	moveresize,		{.v = (int []){ 0, 0, 25, 0 }}},
-	{ MODKEY|ShiftMask,		XK_Left,	moveresize,		{.v = (int []){ 0, 0, -25, 0 }}},
-
-//	{ MODKEY|ControlMask,           XK_Up,     moveresizeedge, {.v = "t"} },
-//	{ MODKEY|ControlMask,           XK_Down,   moveresizeedge, {.v = "b"} },
-//	{ MODKEY|ControlMask,           XK_Left,   moveresizeedge, {.v = "l"} },
-//	{ MODKEY|ControlMask,           XK_Right,  moveresizeedge, {.v = "r"} },
-//	{ MODKEY|ControlMask|ShiftMask, XK_Up,     moveresizeedge, {.v = "T"} },
-//	{ MODKEY|ControlMask|ShiftMask, XK_Down,   moveresizeedge, {.v = "B"} },
-//	{ MODKEY|ControlMask|ShiftMask, XK_Left,   moveresizeedge, {.v = "L"} },
-//	{ MODKEY|ControlMask|ShiftMask, XK_Right,  moveresizeedge, {.v = "R"} },
-
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
@@ -171,7 +158,9 @@ static Button buttons[] = {
 	/* click                event mask      button          function        argument */
 	{ ClkLtSymbol,          0,              Button1,        setlayout,      {0} },
 	{ ClkLtSymbol,          0,              Button3,        setlayout,      {.v = &layouts[2]} },
-	{ ClkWinTitle,          0,              Button2,        zoom,           {0} },
+	{ ClkWinTitle,          0,              Button1,        zoom,           {0} },
+	{ ClkStatusText,        0,              Button1,        spawn,          {.v = procviewercmd } },
+	{ ClkStatusText,        0,              Button3,        spawn,          {.v = dmenucmd } },
 	{ ClkStatusText,        0,              Button2,        spawn,          {.v = termcmd } },
 	{ ClkClientWin,         MODKEY,         Button1,        movemouse,      {0} },
 	{ ClkClientWin,         MODKEY,         Button2,        togglefloating, {0} },
