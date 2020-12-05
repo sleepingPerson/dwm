@@ -1208,7 +1208,8 @@ moveresize(const Arg *arg) {
 	if (!c || !arg)
 		return;
 	if (selmon->lt[selmon->sellt]->arrange && !c->isfloating)
-		return;
+		togglefloating(NULL);
+//		return;
 	if (sscanf((char *)arg->v, "%d%c %d%c %d%c %d%c", &x, &xAbs, &y, &yAbs, &w, &wAbs, &h, &hAbs) != 8)
 		return;
 
